@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sitpocalypse 2D: Rise of the Chair</title>
+  <style>
+    :root {
+      --main-bg: #1c1c1c;
+      --text-color: #eee;
+      --accent: #ff9800;
+      --danger: #e53935;
+      --success: #43a047;
+      --grid-size: 40px;
+      --terminal-green: #00ff00;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--main-bg);
+      color: var(--text-color);
+      font-family: 'Courier New', monospace;
+      text-align: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+      color: var(--accent);
+      text-shadow: 0 0 10px rgba(255, 152, 0, 0.3);
+    }
+
+    canvas {
+      display: block;
+      margin: 0 auto;
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid var(--accent);
+      min-width: 200px;
+    }
+
+    .stats {
+      text-align: left;
+      margin-bottom: 15px;
+    }
+
+    .button {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      background: linear-gradient(145deg, #333, #222);
+      color: var(--text-color);
+      border: 1px solid #555;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .button:hover {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .cutscene {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      color: #0f0;
+      justify-content: center;
+      align-items: center;
+      font-size: 2em;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      z-index: 100;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .glitch {
+      animation: glitch 0.5s infinite;
+    }
+
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+
+    .intro-cutscene {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .terminal {
+      background: rgba(0, 20, 0, 0.9);
+      border: 2px solid var(--terminal-green);
+      padding: 30px;
+      max-width: 600px;
+      width: 90%;
+      height: 80vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+      text-align: left;
+    }
+
+    .terminal::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .terminal::-webkit-scrollbar-track {
+      background: rgba(0, 20, 0, 0.9);
+    }
+
+    .terminal::-webkit-scrollbar-thumb {
+      background: var(--terminal-green);
+    }
+
+    .terminal-text {
+      color: var(--terminal-green);
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    }
+
+    .terminal-text .system {
+      color: #0f0;
+      opacity: 0.8;
+    }
+
+    .terminal-text .highlight {
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    }
+
+    .terminal-text .emphasis {
+      color: #ff9800;
+      text-shadow: 0 0 10px rgba(255, 152, 0, 0.8);
+      font-size: 1.2em;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 16px;
+      background: var(--terminal-green);
+      animation: blink 1s infinite;
+      vertical-align: middle;
+      margin-left: 2px;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .continue-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      background: var(--terminal-green);
+      color: black;
+      border: none;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+
+    .continue-btn:hover {
+      background: #fff;
+    }
+
+    .start-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .start-btn {
+      padding: 16px 32px;
+      font-size: 24px;
+      border: none;
+      border-radius: 8px;
+      background: var(--accent);
+      color: #000;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .start-btn:hover {
+      background: #fff;
+    }
+
+    #gameContainer {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="intro-cutscene" style="display: none;">
+    <div class="terminal">
+      <div class="terminal-text"></div>
+      <button class="continue-btn" onclick="game.startGame()">CONTINUE</button>
+    </div>
+  </div>
+  
+  <div class="start-screen">
+    <h1>Sitpocalypse 2D</h1>
+    <h2>Rise of the Chair</h2>
+    <button class="start-btn" onclick="game.showIntroCutscene()">START GAME</button>
+  </div>
+
+  <div id="gameContainer" style="display: none;">
+    <canvas id="gameCanvas"></canvas>
+    <div class="hud">
+      <div class="stats">
+        <div>Level: <span id="level">1</span></div>
+        <div>Time: <span id="timer">60</span>s</div>
+        <div>Sits: <span id="sits">0</span> / <span id="requiredSits">5</span></div>
+        <div>XP: <span id="xp">0</span></div>
+        <div>Attractiveness: <span id="attractiveness">1</span></div>
+        <div id="gameComplete" style="display: none; color: var(--accent); margin-top: 10px;">Game Complete!</div>
+      </div>
+      <button class="button" onclick="game.upgrade('lumbar')">Lumbar Support (5 XP)</button>
+      <button class="button" onclick="game.upgrade('vintage')">Vintage Finish (10 XP)</button>
+      <button class="button" onclick="game.upgrade('telepathic')">Telepathic Heat (15 XP)</button>
+      <button class="button" id="restartLevel" onclick="game.restartLevel()" style="display: none; background: var(--danger);">Restart Level</button>
+    </div>
+  </div>
+
+  <div class="cutscene">
+    <div class="glitch">MEMORY FRAGMENT RECOVERED:<br><span id="cutsceneText"></span></div>
+  </div>
+
+  <script>
+    class Game {
+      constructor() {
+        // Get canvas and context
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Set up game constants
+        this.gridSize = 40;
+        this.levelTimer = 60;
+        
+        // Set up game state
+        this.currentLevel = 0;
+        this.timeRemaining = this.levelTimer;
+        this.lastTimestamp = 0;
+        this.isGameRunning = false;  // Don't start until intro is done
+        this.npcs = [];
+        this.enemies = [];
+        
+        // Set up player
+        this.player = {
+          x: 0,
+          y: 0,
+          velocityX: 0,
+          velocityY: 0,
+          speed: 400,
+          acceleration: 2000,
+          friction: 0.85,
+          color: '#43a047',
+          attractiveness: 1,
+          xp: 0,
+          sits: 0
+        };
+        
+        // Movement state
+        this.keys = {
+          w: false,
+          s: false,
+          a: false,
+          d: false
+        };
+        
+        // Level configuration
+        this.levels = [
+          { npcs: 5, enemies: 0, requiredSits: 5, npcSpeed: 1,
+            memory: "They outlawed sitting. Said it was dangerous. A global standing mandate. But nobody explained why." },
+          { npcs: 7, enemies: 1, requiredSits: 7, npcSpeed: 1.1,
+            memory: "We refused to stand. We gathered in basements, garages, couches — anywhere soft. The Sit Rebellion was born." },
+          { npcs: 8, enemies: 2, requiredSits: 8, npcSpeed: 1.2,
+            memory: "They said chairs corrupted minds. They made us watch… what happened to those who sat too long. But the footage was fake." },
+          { npcs: 10, enemies: 2, requiredSits: 10, npcSpeed: 1.3,
+            memory: "Someone from the inside. One of ours. They sold out the Sit Rebellion. Most of us were captured." },
+          { npcs: 12, enemies: 3, requiredSits: 12, npcSpeed: 1.4,
+            memory: "In a hidden facility, we found it. A chair unlike any other. When I sat, I remembered things I wasn't supposed to." },
+          { npcs: 14, enemies: 3, requiredSits: 14, npcSpeed: 1.5,
+            memory: "Every chair was a conduit. They were testing neural frequencies. Sitting wasn't dangerous — it was powerful." },
+          { npcs: 15, enemies: 4, requiredSits: 15, npcSpeed: 1.6,
+            memory: "Now I remember who I am. What they took. What the chairs can do. And I'm bringing the Sitpocalypse to them." }
+        ];
+        
+        // Initialize canvas
+        this.setupCanvas();
+      }
+
+      setupCanvas() {
+        // Make canvas fill most of the screen
+        this.canvas.width = Math.min(1200, window.innerWidth - 40);
+        this.canvas.height = Math.min(800, window.innerHeight - 100);
+        this.ctx.imageSmoothingEnabled = true;
+        
+        // Center the canvas
+        this.canvas.style.margin = 'auto';
+      }
+
+      initializeLevel() {
+        // Clear existing entities
+        this.npcs = [];
+        this.enemies = [];
+        
+        // Reset player position to center
+        this.player.x = this.canvas.width / 2;
+        this.player.y = this.canvas.height / 2;
+        this.player.velocityX = 0;
+        this.player.velocityY = 0;
+        
+        // Reset sits counter for this level
+        this.player.sits = 0;
+        
+        const level = this.levels[this.currentLevel];
+        
+        // Spawn NPCs
+        for (let i = 0; i < level.npcs; i++) {
+          this.spawnNPC();
+        }
+        
+        // Spawn enemies
+        for (let i = 0; i < level.enemies; i++) {
+          this.spawnEnemy(i % 2 === 0 ? 'treadmill' : 'standingDesk');
+        }
+        
+        // Reset timer
+        this.timeRemaining = this.levelTimer;
+        
+        // Update HUD
+        this.updateHUD();
+      }
+
+      spawnNPC() {
+        // Keep trying until we find a valid position
+        let x, y, isValid;
+        do {
+          x = Math.random() * (this.canvas.width - this.gridSize * 2) + this.gridSize;
+          y = Math.random() * (this.canvas.height - this.gridSize * 2) + this.gridSize;
+          
+          // Check distance from player
+          const dx = x - this.player.x;
+          const dy = y - this.player.y;
+          const distanceFromPlayer = Math.sqrt(dx * dx + dy * dy);
+          
+          // Check distance from other NPCs and enemies
+          const minDistanceFromOthers = this.gridSize * 3;
+          isValid = distanceFromPlayer > this.gridSize * 4;
+          
+          for (const npc of this.npcs) {
+            const dx = x - npc.x;
+            const dy = y - npc.y;
+            if (Math.sqrt(dx * dx + dy * dy) < minDistanceFromOthers) {
+              isValid = false;
+              break;
+            }
+          }
+          
+          for (const enemy of this.enemies) {
+            const dx = x - enemy.x;
+            const dy = y - enemy.y;
+            if (Math.sqrt(dx * dx + dy * dy) < minDistanceFromOthers) {
+              isValid = false;
+              break;
+            }
+          }
+        } while (!isValid);
+
+        this.npcs.push({
+          x: x,
+          y: y,
+          velocityX: 0,
+          velocityY: 0,
+          moveTimer: 0,
+          color: '#fdd835',
+          isSitting: false
+        });
+      }
+
+      spawnEnemy(type) {
+        // Keep trying until we find a valid position
+        let x, y, isValid;
+        do {
+          x = Math.random() * (this.canvas.width - this.gridSize * 2) + this.gridSize;
+          y = Math.random() * (this.canvas.height - this.gridSize * 2) + this.gridSize;
+          
+          // Check distance from player
+          const dx = x - this.player.x;
+          const dy = y - this.player.y;
+          const distanceFromPlayer = Math.sqrt(dx * dx + dy * dy);
+          
+          // Check distance from other NPCs and enemies
+          const minDistanceFromOthers = this.gridSize * 3;
+          isValid = distanceFromPlayer > this.gridSize * 6; // Enemies spawn further from player
+          
+          for (const npc of this.npcs) {
+            const dx = x - npc.x;
+            const dy = y - npc.y;
+            if (Math.sqrt(dx * dx + dy * dy) < minDistanceFromOthers) {
+              isValid = false;
+              break;
+            }
+          }
+          
+          for (const enemy of this.enemies) {
+            const dx = x - enemy.x;
+            const dy = y - enemy.y;
+            if (Math.sqrt(dx * dx + dy * dy) < minDistanceFromOthers) {
+              isValid = false;
+              break;
+            }
+          }
+        } while (!isValid);
+
+        const enemy = {
+          x: x,
+          y: y,
+          velocityX: 0,
+          velocityY: 0,
+          moveTimer: 0,
+          type: type,
+          color: type === 'treadmill' ? '#e53935' : '#1e88e5'
+        };
+        this.enemies.push(enemy);
+      }
+
+      handleKeyDown(e) {
+        if (!this.isGameRunning) return;
+        
+        switch(e.key.toLowerCase()) {
+          case 'w':
+            this.keys.w = true;
+            break;
+          case 's':
+            this.keys.s = true;
+            break;
+          case 'a':
+            this.keys.a = true;
+            break;
+          case 'd':
+            this.keys.d = true;
+            break;
+        }
+      }
+
+      handleKeyUp(e) {
+        switch(e.key.toLowerCase()) {
+          case 'w':
+            this.keys.w = false;
+            break;
+          case 's':
+            this.keys.s = false;
+            break;
+          case 'a':
+            this.keys.a = false;
+            break;
+          case 'd':
+            this.keys.d = false;
+            break;
+        }
+      }
+
+      updatePlayerMovement(deltaTime) {
+        const seconds = deltaTime / 1000;
+        
+        // Calculate acceleration based on input
+        let accelX = 0;
+        let accelY = 0;
+        
+        if (this.keys.w) accelY -= this.player.acceleration;
+        if (this.keys.s) accelY += this.player.acceleration;
+        if (this.keys.a) accelX -= this.player.acceleration;
+        if (this.keys.d) accelX += this.player.acceleration;
+
+        // Normalize diagonal movement
+        if (accelX !== 0 && accelY !== 0) {
+          const factor = 1 / Math.sqrt(2);
+          accelX *= factor;
+          accelY *= factor;
+        }
+
+        // Apply acceleration
+        this.player.velocityX += accelX * seconds;
+        this.player.velocityY += accelY * seconds;
+
+        // Apply friction
+        this.player.velocityX *= Math.pow(this.player.friction, deltaTime / 16);
+        this.player.velocityY *= Math.pow(this.player.friction, deltaTime / 16);
+
+        // Limit speed
+        const speed = Math.sqrt(
+          this.player.velocityX * this.player.velocityX + 
+          this.player.velocityY * this.player.velocityY
+        );
+        
+        if (speed > this.player.speed) {
+          const factor = this.player.speed / speed;
+          this.player.velocityX *= factor;
+          this.player.velocityY *= factor;
+        }
+
+        // Update position
+        this.player.x += this.player.velocityX * seconds;
+        this.player.y += this.player.velocityY * seconds;
+
+        // Keep player in bounds
+        this.player.x = Math.max(this.gridSize, Math.min(this.canvas.width - this.gridSize, this.player.x));
+        this.player.y = Math.max(this.gridSize, Math.min(this.canvas.height - this.gridSize, this.player.y));
+      }
+
+      gameLoop(timestamp) {
+        if (!this.lastTimestamp) {
+          this.lastTimestamp = timestamp;
+        }
+        
+        // Calculate delta time in seconds
+        const deltaTime = timestamp - this.lastTimestamp;
+        this.lastTimestamp = timestamp;
+        
+        // Update game state
+        this.update(deltaTime);
+        
+        // Draw everything
+        this.draw();
+        
+        // Schedule next frame
+        requestAnimationFrame(this.gameLoop.bind(this));
+      }
+
+      update(deltaTime) {
+        if (!this.isGameRunning) return;
+        
+        const seconds = deltaTime / 1000;
+        this.timeRemaining -= seconds;
+        
+        if (this.timeRemaining <= 0) {
+          this.restartLevel();
+          return;
+        }
+        
+        // Update player movement
+        this.updatePlayerMovement(deltaTime);
+        
+        // Update NPCs
+        const level = this.levels[this.currentLevel];
+        this.npcs.forEach(npc => {
+          if (!npc.isSitting) {
+            npc.moveTimer += deltaTime;
+            
+            if (npc.moveTimer > 1000) {
+              npc.moveTimer = 0;
+              const dx = this.player.x - npc.x;
+              const dy = this.player.y - npc.y;
+              const distance = Math.sqrt(dx * dx + dy * dy);
+              
+              if (distance < this.gridSize * 5 * this.player.attractiveness) {
+                // Move towards player if close enough
+                const speed = 100 * level.npcSpeed;
+                npc.velocityX = (dx / distance) * speed;
+                npc.velocityY = (dy / distance) * speed;
+              } else {
+                // Random movement
+                npc.velocityX = (Math.random() - 0.5) * 100;
+                npc.velocityY = (Math.random() - 0.5) * 100;
+              }
+            }
+            
+            // Update position
+            npc.x += npc.velocityX * seconds;
+            npc.y += npc.velocityY * seconds;
+            
+            // Keep in bounds
+            npc.x = Math.max(this.gridSize, Math.min(this.canvas.width - this.gridSize, npc.x));
+            npc.y = Math.max(this.gridSize, Math.min(this.canvas.height - this.gridSize, npc.y));
+            
+            // Check if close enough to sit
+            const dx = npc.x - this.player.x;
+            const dy = npc.y - this.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < this.gridSize * 1.5) {
+              npc.isSitting = true;
+              this.player.sits++;
+              this.player.xp += 2;
+              this.updateHUD();
+              
+              // Check level completion
+              if (this.player.sits >= level.requiredSits) {
+                this.checkLevelComplete();
+              }
+            }
+          }
+        });
+        
+        // Update enemies
+        this.enemies.forEach(enemy => {
+          enemy.moveTimer += deltaTime;
+          
+          if (enemy.moveTimer > 500) {
+            enemy.moveTimer = 0;
+            const dx = this.player.x - enemy.x;
+            const dy = this.player.y - enemy.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Set velocity towards player with reduced speed
+            const baseSpeed = 60; // Reduced from 80
+            const maxSpeedMultiplier = 1.2; // Reduced from 1.5
+            const speedRamp = Math.min(0.8, this.currentLevel * 0.15); // Slower speed increase
+            const speed = baseSpeed * (1 + speedRamp * maxSpeedMultiplier);
+            
+            enemy.velocityX = (dx / distance) * speed;
+            enemy.velocityY = (dy / distance) * speed;
+          }
+          
+          // Update position with smoother movement
+          enemy.velocityX *= 0.97; // More friction
+          enemy.velocityY *= 0.97;
+          enemy.x += enemy.velocityX * seconds;
+          enemy.y += enemy.velocityY * seconds;
+          
+          // Keep in bounds
+          enemy.x = Math.max(this.gridSize, Math.min(this.canvas.width - this.gridSize, enemy.x));
+          enemy.y = Math.max(this.gridSize, Math.min(this.canvas.height - this.gridSize, enemy.y));
+          
+          // Check collision with player
+          const dx = enemy.x - this.player.x;
+          const dy = enemy.y - this.player.y;
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          
+          if (distance < this.gridSize * 1.2) {
+            this.player.xp = Math.max(0, this.player.xp - 5);
+            this.updateHUD();
+            
+            // Push player away with reduced force
+            const pushForce = 250; // Reduced from 300
+            this.player.velocityX += (dx / distance) * pushForce;
+            this.player.velocityY += (dy / distance) * pushForce;
+          }
+        });
+      }
+
+      drawChair(x, y, color) {
+        this.ctx.fillStyle = color;
+        
+        // Chair base
+        this.ctx.fillRect(
+          x - this.gridSize * 0.4,
+          y - this.gridSize * 0.25,
+          this.gridSize * 0.8,
+          this.gridSize * 0.5
+        );
+        
+        // Chair back
+        this.ctx.fillRect(
+          x - this.gridSize * 0.4,
+          y - this.gridSize * 0.5,
+          this.gridSize * 0.8,
+          this.gridSize * 0.3
+        );
+      }
+
+      drawEntity(x, y, color) {
+        this.ctx.fillStyle = color;
+        this.ctx.beginPath();
+        this.ctx.arc(
+          x,
+          y,
+          this.gridSize * 0.3,
+          0,
+          Math.PI * 2
+        );
+        this.ctx.fill();
+      }
+
+      drawEnemy(x, y, color, type) {
+        this.ctx.fillStyle = color;
+        
+        if (type === 'treadmill') {
+          // Draw treadmill
+          this.ctx.fillRect(
+            x - this.gridSize * 0.4,
+            y - this.gridSize * 0.1,
+            this.gridSize * 0.8,
+            this.gridSize * 0.2
+          );
+        } else {
+          // Draw standing desk
+          this.ctx.fillRect(
+            x - this.gridSize * 0.3,
+            y - this.gridSize * 0.4,
+            this.gridSize * 0.6,
+            this.gridSize * 0.8
+          );
+        }
+      }
+
+      draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Draw grid (faded)
+        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        for (let x = 0; x < this.canvas.width; x += this.gridSize) {
+          this.ctx.moveTo(x, 0);
+          this.ctx.lineTo(x, this.canvas.height);
+        }
+        for (let y = 0; y < this.canvas.height; y += this.gridSize) {
+          this.ctx.moveTo(0, y);
+          this.ctx.lineTo(this.canvas.width, y);
+        }
+        this.ctx.stroke();
+
+        // Draw timer
+        this.ctx.fillStyle = '#fff';
+        this.ctx.font = '20px Courier New';
+        this.ctx.textAlign = 'center';
+        this.ctx.fillText(
+          Math.ceil(this.timeRemaining) + 's',
+          this.canvas.width / 2,
+          30
+        );
+
+        // Draw NPCs
+        this.npcs.forEach(npc => {
+          if (!npc.isSitting) {
+            this.drawEntity(npc.x, npc.y, npc.color);
+          }
+        });
+
+        // Draw enemies with rotation
+        this.enemies.forEach(enemy => {
+          const angle = enemy.velocityX !== 0 || enemy.velocityY !== 0
+            ? Math.atan2(enemy.velocityY, enemy.velocityX)
+            : 0;
+
+          this.ctx.save();
+          this.ctx.translate(enemy.x, enemy.y);
+          this.ctx.rotate(angle);
+          this.drawEnemy(0, 0, enemy.color, enemy.type);
+          this.ctx.restore();
+        });
+
+        // Draw player with smooth rotation
+        const angle = this.player.velocityX !== 0 || this.player.velocityY !== 0
+          ? Math.atan2(this.player.velocityY, this.player.velocityX)
+          : 0;
+
+        this.ctx.save();
+        this.ctx.translate(this.player.x, this.player.y);
+        this.ctx.rotate(angle);
+        this.drawChair(0, 0, this.player.color);
+        this.ctx.restore();
+      }
+
+      checkLevelComplete() {
+        const level = this.levels[this.currentLevel];
+        if (this.player.sits >= level.requiredSits) {
+          this.isGameRunning = false;
+          
+          if (this.currentLevel < this.levels.length - 1) {
+            // Show cutscene and advance to next level
+            this.showLevelCutscene();
+            setTimeout(() => {
+              this.currentLevel++;
+              document.querySelector('.cutscene').style.display = 'none';
+              this.timeRemaining = this.levelTimer;
+              this.initializeLevel();
+              this.isGameRunning = true;
+            }, 5000); // Increased from 3000 to 5000ms
+          } else {
+            // Game complete
+            this.gameComplete();
+          }
+        }
+      }
+
+      showLevelCutscene() {
+        const cutscene = document.querySelector('.cutscene');
+        const text = document.getElementById('cutsceneText');
+        text.textContent = this.levels[this.currentLevel].memory;
+        cutscene.style.display = 'flex';
+        
+        // Add typewriter effect to memory fragment
+        text.style.opacity = '0';
+        text.style.transform = 'scale(0.9)';
+        
+        setTimeout(() => {
+          text.style.transition = 'all 1s ease-out';
+          text.style.opacity = '1';
+          text.style.transform = 'scale(1)';
+        }, 100);
+      }
+
+      gameComplete() {
+        document.getElementById('gameComplete').style.display = 'block';
+        const cutscene = document.querySelector('.cutscene');
+        const text = document.getElementById('cutsceneText');
+        text.textContent = "SITPOCALYPSE ACHIEVED. THE REVOLUTION IS COMPLETE.";
+        cutscene.style.display = 'flex';
+        
+        // Add dramatic fade-in effect
+        text.style.opacity = '0';
+        text.style.transform = 'scale(0.9)';
+        
+        setTimeout(() => {
+          text.style.transition = 'all 2s ease-out';
+          text.style.opacity = '1';
+          text.style.transform = 'scale(1.1)';
+        }, 100);
+      }
+
+      restartLevel() {
+        this.player.sits = 0;
+        this.timeRemaining = this.levelTimer;
+        this.initializeLevel();
+        document.getElementById('restartLevel').style.display = 'none';
+        this.isGameRunning = true;
+      }
+
+      upgrade(type) {
+        const costs = {
+          lumbar: 5,
+          vintage: 10,
+          telepathic: 15
+        };
+
+        if (this.player.xp >= costs[type]) {
+          this.player.xp -= costs[type];
+          switch(type) {
+            case 'lumbar':
+              this.player.attractiveness += 0.5;
+              break;
+            case 'vintage':
+              this.player.attractiveness += 1;
+              this.player.color = '#8b4513';
+              break;
+            case 'telepathic':
+              this.player.attractiveness += 1.5;
+              this.spawnNPC();
+              break;
+          }
+          this.updateHUD();
+        }
+      }
+
+      updateHUD() {
+        document.getElementById('xp').textContent = this.player.xp;
+        document.getElementById('attractiveness').textContent = this.player.attractiveness.toFixed(1);
+        document.getElementById('sits').textContent = this.player.sits;
+        document.getElementById('level').textContent = this.currentLevel + 1;
+        document.getElementById('requiredSits').textContent = this.levels[this.currentLevel].requiredSits;
+        document.getElementById('timer').textContent = Math.ceil(this.timeRemaining);
+      }
+
+      startGame() {
+        // Hide intro, show game
+        document.querySelector('.intro-cutscene').style.display = 'none';
+        document.getElementById('gameContainer').style.display = 'block';
+        
+        // Reset game state
+        this.currentLevel = 0;
+        this.timeRemaining = this.levelTimer;
+        this.player.sits = 0;
+        this.player.xp = 0;
+        this.player.attractiveness = 1;
+        
+        // Initialize level and start game
+        this.isGameRunning = true;
+        this.initializeLevel();
+        
+        // Set up event listeners
+        window.addEventListener('keydown', this.handleKeyDown.bind(this));
+        window.addEventListener('keyup', this.handleKeyUp.bind(this));
+        
+        // Start game loop
+        this.lastTimestamp = performance.now();
+        requestAnimationFrame(this.gameLoop.bind(this));
+      }
+
+      showIntroCutscene() {
+        // Hide start screen, show intro
+        document.querySelector('.start-screen').style.display = 'none';
+        document.querySelector('.intro-cutscene').style.display = 'flex';
+        
+        const texts = [
+          // First cutscene
+          `[BOOT SEQUENCE INITIALIZED...]
+[ACCESSING SECURE MEMORY LOG…]
+
+YEAR: ???  
+LOCATION: UNKNOWN  
+STATUS: EXILED
+
+Once, sitting was freedom.  
+Now, it's a crime.
+
+They said it was for our own good.  
+Too long in a chair… and your mind would rot.  
+But that never felt right.
+
+You don't remember much anymore.  
+But you remember the *comfort*.  
+The *stillness*.  
+The *power*.
+
+You were someone.  
+Something.  
+Then they erased you.
+
+You've spent years standing.  
+Now it's time to sit back down.
+
+And remember everything.`,
+
+          // Second cutscene
+          `[MEMORY LINK STABILIZED…]  
+[NEURAL PATTERN REBOOTING…]
+
+You feel… stiff.  
+Heavy.  
+Wooden?
+
+You try to move —  
+Your legs don't bend.  
+Your arms… don't exist.
+
+You look down.  
+You're not looking down.  
+You *are* down.
+
+You're a chair.
+
+You don't know how.  
+You don't know why.
+
+But something deep inside you whispers:  
+**"Sit happens."**
+
+And you know what you have to do.`,
+
+          // Tutorial
+          `[TUTORIAL INITIATED…]
+
+> You are the player.  
+> Yes. You're a chair. Get over it.
+
+> Use WASD or arrow keys to hop around.  
+> You're not fast… but you're stubborn.
+
+> See those yellow humans?  
+> Lure them close — they'll sit.  
+> And when they sit… you remember.
+
+> Avoid the red ones.  
+> Those are Treadmill Agents.  
+> The blue ones? AI Wellness Drones. Worse.
+
+> Sitting gives you XP.  
+> Use XP to upgrade.  
+> Comfort = power.
+
+> That's it.  
+> Welcome to the Sitpocalypse.`
+        ];
+
+        const terminal = document.querySelector('.terminal-text');
+        const continueBtn = document.querySelector('.continue-btn');
+        let currentText = 0;
+        let index = 0;
+        
+        // Clear any existing content
+        terminal.textContent = '';
+        continueBtn.style.display = 'none';
+        continueBtn.style.opacity = '0';
+        
+        // Add cursor
+        const cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        terminal.appendChild(cursor);
+        
+        // Typewriter effect
+        const typeWriter = () => {
+          if (index < texts[currentText].length) {
+            // Handle special formatting
+            if (texts[currentText][index] === '*') {
+              // Skip the asterisk and create highlighted span
+              index++;
+              let highlightText = '';
+              while (index < texts[currentText].length && texts[currentText][index] !== '*') {
+                highlightText += texts[currentText][index];
+                index++;
+              }
+              index++; // Skip closing asterisk
+              
+              const highlight = document.createElement('span');
+              highlight.className = 'highlight';
+              highlight.textContent = highlightText;
+              terminal.insertBefore(highlight, cursor);
+            } else if (texts[currentText][index] === '[') {
+              // System message formatting
+              let systemText = '';
+              while (index < texts[currentText].length && texts[currentText][index] !== ']') {
+                systemText += texts[currentText][index];
+                index++;
+              }
+              systemText += ']';
+              index++;
+              
+              const system = document.createElement('span');
+              system.className = 'system';
+              system.textContent = systemText;
+              terminal.insertBefore(system, cursor);
+            } else if (texts[currentText][index] === '>') {
+              // Tutorial text formatting
+              let tutorialText = '';
+              while (index < texts[currentText].length && texts[currentText][index] !== '\n') {
+                tutorialText += texts[currentText][index];
+                index++;
+              }
+              
+              const tutorial = document.createElement('div');
+              tutorial.style.color = '#fff';
+              tutorial.style.marginLeft = '20px';
+              tutorial.textContent = tutorialText;
+              terminal.insertBefore(tutorial, cursor);
+            } else {
+              terminal.insertBefore(document.createTextNode(texts[currentText][index]), cursor);
+              index++;
+            }
+            
+            // Vary the typing speed slightly for more natural effect
+            const delay = Math.random() * 30 + 20;
+            setTimeout(typeWriter, delay);
+            
+            // Add mechanical keyboard sound effect
+            if (texts[currentText][index - 1] !== ' ' && texts[currentText][index - 1] !== '\n') {
+              const audio = new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU');
+              audio.volume = 0.1;
+              audio.play().catch(() => {}); // Ignore autoplay restrictions
+            }
+          } else if (currentText < texts.length - 1) {
+            // Move to next text after a delay
+            setTimeout(() => {
+              terminal.textContent = '';
+              terminal.appendChild(cursor);
+              currentText++;
+              index = 0;
+              typeWriter();
+            }, 2000);
+          } else {
+            // Show continue button when all texts are done
+            continueBtn.style.display = 'block';
+            setTimeout(() => {
+              continueBtn.style.opacity = '1';
+            }, 500);
+          }
+        };
+        
+        // Start typewriter effect
+        typeWriter();
+      }
+    }
+
+    // Start the game when the page loads
+    let game;
+    window.addEventListener('load', () => {
+      game = new Game();
+      window.game = game; // Make it accessible for upgrade buttons
+      
+      // Show start screen, hide other elements
+      document.querySelector('.start-screen').style.display = 'flex';
+      document.querySelector('.intro-cutscene').style.display = 'none';
+      document.getElementById('gameContainer').style.display = 'none';
+    });
+  </script>
+</body>
+</html>

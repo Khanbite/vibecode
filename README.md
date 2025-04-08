@@ -1,0 +1,6 @@
+1. I built a simple 2d web game where you play as a chair in a silly post-apocalyptic world where sitting has been outlawed. It's level based, with the goal in each level being to have a certain number of people sit on you, the chair.
+2. I used HTML and Javascript to build the game and coded in VScode.
+3. I used a variety of AI tools. ChatGPT to give me concepts and ideas as well as some base starter code, then mostly WindSurf Editor by Codeium for the heavy duty code generation, and briefly tried to use Google Gemini, though I couldn't get it to work well.
+4. AI did 99% of the work, with it coming up with the concept of the game and making code for it. What I did was just to make sure it was going on the right path for what I wanted my final product to be. With every iteration, I gave it things to fix, add, and rewrite. If a cutscene was too short, I told the AI to make it longer. If the physics wasn't to my liking, I told the AI to fix it.
+5. One thing I'm proud of is how I could be specific and tell the AI exactly what I wanted, so most of the time, it delivered.
+6. One thing I'd improve with more time is the attention to detail in my game. I'd have many more features and nuances worked out so that the final product was smooth. 
